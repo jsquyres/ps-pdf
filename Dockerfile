@@ -1,5 +1,7 @@
 FROM python:3.11-slim
 
+LABEL org.opencontainers.image.description Trivial ParishSoft PDF letter processor
+
 # Set working directory
 WORKDIR /app
 
