@@ -67,4 +67,6 @@ jobs:
               -p 5000:5000 \
               --restart unless-stopped \
               -v ~/pdf-processor-logs:/var/log/pdf-processor \
+              -e RECAPTCHA_SITE_KEY='${{ secrets.RECAPTCHA_SITE_KEY }}' \
+              -e RECAPTCHA_SECRET_KEY='${{ secrets.RECAPTCHA_SECRET_KEY }}' \
               ghcr.io/${{ github.repository }}:latest

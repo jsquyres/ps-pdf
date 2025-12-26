@@ -5,6 +5,7 @@ import re
 import uuid
 import shutil
 import zipfile
+import requests
 from pathlib import Path
 from flask import Flask, render_template, request, send_file, jsonify
 from werkzeug.utils import secure_filename
@@ -15,6 +16,11 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = '/tmp/pdf-processor/uploads'
 app.config['PROCESSING_FOLDER'] = '/tmp/pdf-processor/processing'
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
+
+# reCAPTCHA configuration
+RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY', '')
+RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY', '')
+RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
 
 # Ensure directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -260,6 +266,32 @@ def create_even_page_pdf(input_pdf_path, output_pdf_path, family_mapping):
     with open(output_pdf_path, 'wb') as f:
         writer.write(f)
 
+def verify_recaptcha(token):
+    """Verify reCAPTCHA token with Google."""
+    if not RECAPTCHA_SECRET_KEY:
+        # If reCAPTCHA is not configured, skip verification (for development)
+        app.logger.warning('reCAPTCHA not configured, skipping verification')
+        return True
+
+    try:
+        response = requests.post(RECAPTCHA_VERIFY_URL, data={
+            'secret': RECAPTCHA_SECRET_KEY,
+            'response': token
+        }, timeout=5)
+
+        result = response.json()
+
+        # Check if verification was successful and score is above threshold
+        # reCAPTCHA v3 returns a score from 0.0 to 1.0 (1.0 is very likely a good interaction)
+        if result.get('success') and result.get('score', 0) >= 0.5:
+            return True
+
+        app.logger.warning(f"reCAPTCHA verification failed: {result}")
+        return False
+    except Exception as e:
+        app.logger.error(f"reCAPTCHA verification error: {e}")
+        return False
+
 def create_zip_file(processing_dir, zip_filename):
     """Create a zip file containing all generated PDFs."""
     zip_path = Path(processing_dir) / zip_filename
@@ -281,7 +313,7 @@ def create_zip_file(processing_dir, zip_filename):
 @app.route('/')
 def index():
     """Display the upload form."""
-    return render_template('index.html')
+    return render_template('index.html', recaptcha_site_key=RECAPTCHA_SITE_KEY)
 
 @app.route('/robots.txt')
 def robots_txt():
@@ -293,6 +325,11 @@ Disallow: /
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Handle file upload and processing."""
+    # Verify reCAPTCHA
+    recaptcha_token = request.form.get('recaptcha_token', '')
+    if not verify_recaptcha(recaptcha_token):
+        return jsonify({'error': 'reCAPTCHA verification failed. Please try again.'}), 400
+
     if 'pdf' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
 

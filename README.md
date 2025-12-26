@@ -5,10 +5,32 @@ A self-contained web application for processing PDF contribution letters. This a
 ## Features
 
 - **Web-based Interface**: Simple drag-and-drop or click-to-upload interface
+- **Bot Protection**: Google reCAPTCHA v3 integration to prevent automated abuse
 - **PDF Splitting**: Automatically splits a master PDF into individual family letters based on "Page X of Y" footers
 - **Even-Page Generation**: Creates a version of the PDF with blank pages inserted to ensure each letter has an even number of pages (ideal for duplex printing)
 - **Automated Naming**: Individual PDFs are named using envelope numbers and family names extracted from the letters
 - **ZIP Download**: All processed PDFs are packaged into a single ZIP file for easy download
+
+## reCAPTCHA Configuration
+
+This application uses Google reCAPTCHA v3 to prevent bot submissions. To enable reCAPTCHA protection:
+
+### 1. Get reCAPTCHA Keys
+
+1. Go to [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin/create)
+2. Choose **reCAPTCHA v3**
+3. Add your domain (e.g., `ps-pdf.squyres.com`)
+4. For localhost testing, add `localhost`
+5. Get your **Site Key** and **Secret Key**
+
+### 2. Set Environment Variables
+
+The application requires two environment variables:
+
+- `RECAPTCHA_SITE_KEY`: Your reCAPTCHA site key (public)
+- `RECAPTCHA_SECRET_KEY`: Your reCAPTCHA secret key (private)
+
+**Note**: If these environment variables are not set, the application will log a warning and skip reCAPTCHA verification (useful for development, but not recommended for production).
 
 ## Container Setup
 
@@ -24,7 +46,12 @@ docker build -t pdf-letter-processor .
 #### Basic Run (without persistent logs)
 
 ```bash
-docker run -d -p 5000:5000 --name pdf-processor pdf-letter-processor
+docker run -d \
+  -p 5000:5000 \
+  -e RECAPTCHA_SITE_KEY='your_site_key_here' \
+  -e RECAPTCHA_SECRET_KEY='your_secret_key_here' \
+  --name pdf-processor \
+  pdf-letter-processor
 ```
 
 #### Run with Persistent Logs
@@ -34,6 +61,8 @@ To preserve web server logs even after the container is stopped or removed, map 
 ```bash
 docker run -d \
   -p 5000:5000 \
+  -e RECAPTCHA_SITE_KEY='your_site_key_here' \
+  -e RECAPTCHA_SECRET_KEY='your_secret_key_here' \
   -v /path/on/host/logs:/var/log/pdf-processor \
   --name pdf-processor \
   pdf-letter-processor
@@ -45,6 +74,8 @@ Replace `/path/on/host/logs` with an actual directory on your host system, for e
 # macOS/Linux example
 docker run -d \
   -p 5000:5000 \
+  -e RECAPTCHA_SITE_KEY='your_site_key_here' \
+  -e RECAPTCHA_SECRET_KEY='your_secret_key_here' \
   -v ~/pdf-processor-logs:/var/log/pdf-processor \
   --name pdf-processor \
   pdf-letter-processor
@@ -55,6 +86,8 @@ docker run -d \
 ```bash
 docker run -d \
   -p 8080:5000 \
+  -e RECAPTCHA_SITE_KEY='your_site_key_here' \
+  -e RECAPTCHA_SECRET_KEY='your_secret_key_here' \
   -v ~/pdf-processor-logs:/var/log/pdf-processor \
   --name pdf-processor \
   pdf-letter-processor
@@ -209,15 +242,16 @@ The application will be available at `http://localhost:5000`
 
 ## Security Notes
 
-- This application is designed for internal/trusted use
-- No authentication is implemented
-- Uploaded PDFs are stored temporarily and should be cleaned up periodically
+- **Bot Protection**: reCAPTCHA v3 is implemented to prevent automated abuse (requires configuration)
+- **Search Engine Protection**: robots.txt endpoint prevents search engine indexing
+- **Temporary File Cleanup**: Uploaded PDFs are automatically cleaned up after download
+- No user authentication is implemented
 - For production use, consider adding:
-  - Authentication/authorization
-  - HTTPS/TLS
-  - Rate limiting
-  - Automated cleanup of temporary files
-  - Resource limits
+  - User authentication/authorization
+  - HTTPS/TLS (required for reCAPTCHA in production)
+  - Rate limiting at reverse proxy level
+  - Resource limits and monitoring
+  - Regular security updates
 
 ## License
 

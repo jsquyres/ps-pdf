@@ -219,6 +219,7 @@
             box-shadow: 0 10px 25px rgba(108, 117, 125, 0.4);
         }
     </style>
+    <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
 </head>
 <body>
     <div class="container">
@@ -345,10 +346,14 @@
             uploadSection.style.display = 'none';
             processingSection.classList.add('visible');
 
-            const formData = new FormData();
-            formData.append('pdf', selectedFile);
-
             try {
+                // Get reCAPTCHA token
+                const token = await grecaptcha.execute('{{ recaptcha_site_key }}', {action: 'upload'});
+
+                const formData = new FormData();
+                formData.append('pdf', selectedFile);
+                formData.append('recaptcha_token', token);
+
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
