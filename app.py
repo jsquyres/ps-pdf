@@ -283,6 +283,13 @@ def index():
     """Display the upload form."""
     return render_template('index.html')
 
+@app.route('/robots.txt')
+def robots_txt():
+    """Serve robots.txt to prevent indexing."""
+    return """User-agent: *
+Disallow: /
+""", 200, {'Content-Type': 'text/plain; charset=utf-8'}
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Handle file upload and processing."""
