@@ -2,9 +2,9 @@ name: Build and Deploy Docker Image
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -61,4 +61,9 @@ jobs:
           docker pull ghcr.io/${{ github.repository }}:latest
           docker stop ps-pdf || true
           docker rm ps-pdf || true
-          docker run -d --name ps-pdf -p 5000:5000 --restart unless-stopped ghcr.io/${{ github.repository }}:latest
+          docker run -d \
+              --name ps-pdf \
+              -p 5000:5000 \
+              --restart unless-stopped \
+              -v ~/pdf-processor-logs:/var/log/pdf-processor \
+              ghcr.io/${{ github.repository }}:latest

@@ -358,8 +358,14 @@ def download_file(process_id):
             mimetype='application/zip'
         )
 
-        # Note: In production, you'd want to clean up the processing directory
-        # after some time. For now, leaving it for manual cleanup or a cron job.
+        # Clean up the processing directory after sending the file
+        @response.call_on_close
+        def cleanup():
+            try:
+                if processing_dir.exists():
+                    shutil.rmtree(processing_dir)
+            except Exception as e:
+                app.logger.error(f"Error cleaning up {processing_dir}: {e}")
 
         return response
 
