@@ -25,12 +25,12 @@ This application uses Google reCAPTCHA v3 to prevent bot submissions. To enable 
 
 ### 2. Set Environment Variables
 
-The application requires two environment variables:
+The application uses two environment variables:
 
 - `RECAPTCHA_SITE_KEY`: Your reCAPTCHA site key (public)
 - `RECAPTCHA_SECRET_KEY`: Your reCAPTCHA secret key (private)
 
-**Note**: If these environment variables are not set, the application will log a warning and skip reCAPTCHA verification (useful for development, but not recommended for production).
+**Note**: These environment variables are optional. Using reCAPTCHA is not recommended for local testing or debugging. If these variables are not set, the application will skip reCAPTCHA verification.
 
 ## Container Setup
 

@@ -219,7 +219,9 @@
             box-shadow: 0 10px 25px rgba(108, 117, 125, 0.4);
         }
     </style>
+    {% if recaptcha_site_key %}
     <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+    {% endif %}
 </head>
 <body>
     <div class="container">
@@ -348,7 +350,10 @@
 
             try {
                 // Get reCAPTCHA token
-                const token = await grecaptcha.execute('{{ recaptcha_site_key }}', {action: 'upload'});
+                let token = '';
+                {% if recaptcha_site_key %}
+                token = await grecaptcha.execute('{{ recaptcha_site_key }}', {action: 'upload'});
+                {% endif %}
 
                 const formData = new FormData();
                 formData.append('pdf', selectedFile);

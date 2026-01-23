@@ -268,6 +268,9 @@ def create_even_page_pdf(input_pdf_path, output_pdf_path, family_mapping):
 
 def verify_recaptcha(token):
     """Verify reCAPTCHA token with Google."""
+    if not RECAPTCHA_SITE_KEY and not RECAPTCHA_SECRET_KEY:
+        return True
+
     if not RECAPTCHA_SECRET_KEY:
         # If reCAPTCHA is not configured, skip verification (for development)
         app.logger.warning('reCAPTCHA not configured, skipping verification')
